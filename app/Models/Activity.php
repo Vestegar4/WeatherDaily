@@ -9,21 +9,17 @@ class Activity {
         $db = new Database();
         $this->conn = $db->getConnection();
     }
-
-    // 1. TETAP PAKAI category_id (ANGKA)
-    // Controller lama Anda tidak akan error
     public function create($user_id, $category_id, $title, $city, $date, $time, $status) {
-        // Perhatikan: Kolom database 'date' sudah kita ubah jadi 'activity_date'
         $sql = "INSERT INTO " . $this->table . " (user_id, category_id, title, city, activity_date, time, status)
                 VALUES (:user_id, :category_id, :title, :city, :activity_date, :time, :status)";
         
         $stmt = $this->conn->prepare($sql);
 
         $stmt->bindParam(":user_id", $user_id);
-        $stmt->bindParam(":category_id", $category_id); // Tetap angka
+        $stmt->bindParam(":category_id", $category_id);
         $stmt->bindParam(":title", $title);
         $stmt->bindParam(":city", $city);
-        $stmt->bindParam(":activity_date", $date); // Masuk ke kolom activity_date
+        $stmt->bindParam(":activity_date", $date);
         $stmt->bindParam(":time", $time);
         $stmt->bindParam(":status", $status);
 
@@ -37,15 +33,12 @@ class Activity {
         return $stmt->execute();
     }
 
-    // 2. MODIFIKASI UNTUK STATISTIK (JOIN TABLE)
-    // Fungsi ini otomatis menukar ID (1, 2) menjadi Nama (Kerja, Olahraga)
-    // agar grafik di dashboard bisa membacanya sebagai label teks.
     public function countByCategory($user_id) {
         $sql = "SELECT c.name AS category, COUNT(a.id) AS total
                 FROM activities a
                 JOIN activity_categories c ON a.category_id = c.id
                 WHERE a.user_id = :user_id
-                GROUP BY c.name"; // Group by Nama Kategori
+                GROUP BY c.name";
                 
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(":user_id", $user_id);
@@ -53,9 +46,7 @@ class Activity {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Fungsi Statistik Hari (Bar Chart)
     public function countByDay($user_id) {
-        // Menggunakan activity_date
         $sql = "SELECT DAYNAME(activity_date) as day_name, COUNT(*) as total 
                 FROM {$this->table} 
                 WHERE user_id = ? 
@@ -81,7 +72,6 @@ class Activity {
         return $stmt->fetchColumn();
     }
 
-    // Ambil Data untuk List (Join biar nama kategori muncul)
     public function getAllByUser($user_id) {
         $sql = "SELECT a.*, c.name AS category_name
                 FROM activities a
@@ -118,14 +108,12 @@ class Activity {
             $date, 
             $time, 
             $status, 
-            $id // ID selalu terakhir karena WHERE id = ? ada di akhir
+            $id
         ]);
     }
-    // Fungsi khusus untuk mengubah status saja (tanpa perlu data lain)
     public function updateStatus($id, $status) {
         $sql = "UPDATE {$this->table} SET status = ? WHERE id = ?";
         $stmt = $this->conn->prepare($sql);
-        // Pastikan urutannya benar: Status dulu, baru ID
         return $stmt->execute([$status, $id]);
     }
 }

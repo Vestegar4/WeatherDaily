@@ -13,8 +13,6 @@ $analytics = new AnalyticsService();
 $countNotif = $notifBadge->countUnread($_SESSION['user']['id']);
 $summary = $analytics->getSummary($_SESSION['user']['id']);
 
-// --- AMBIL DATA UNTUK GRAFIK ---
-// 1. Data Kategori (Pie Chart)
 $catStats = $activityModel->countByCategory($_SESSION['user']['id']);
 $catLabels = [];
 $catValues = [];
@@ -23,7 +21,6 @@ foreach($catStats as $row) {
     $catValues[] = $row['total'];
 }
 
-// 2. Data Hari Tersibuk (Bar Chart)
 $dayStats = $activityModel->countByDay($_SESSION['user']['id']);
 $dayLabels = [];
 $dayValues = [];
@@ -197,7 +194,6 @@ foreach($dayStats as $row) {
 <script src="../../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // --- 1. CONFIG PIE CHART (KATEGORI) ---
     const catLabels = <?= json_encode($catLabels); ?>;
     const catValues = <?= json_encode($catValues); ?>;
     
@@ -224,7 +220,6 @@ foreach($dayStats as $row) {
         });
     }
 
-    // --- 2. CONFIG BAR CHART (HARI) ---
     const dayLabels = <?= json_encode($dayLabels); ?>;
     const dayValues = <?= json_encode($dayValues); ?>;
 

@@ -5,35 +5,31 @@ if (!isset($_SESSION['user'])) { header("Location: ../auth/login.php"); exit(); 
 require_once "../../Models/Activity.php";
 $activityModel = new Activity();
 
-// 1. CEK APAKAH ADA ID DI URL (misal: edit.php?id=5)
 if (!isset($_GET['id'])) {
     header("Location: index.php");
     exit();
 }
 
 $id = $_GET['id'];
-$data = $activityModel->getById($id); // Ambil data lama dari database
+$data = $activityModel->getById($id);
 
-// Jika data tidak ditemukan
 if (!$data) {
     echo "Data tidak ditemukan!";
     exit();
 }
 
-// 2. PROSES UPDATE SAAT TOMBOL SIMPAN DITEKAN
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = $_POST['title'];
-    $category_id = $_POST['category_id']; // Pastikan ini angka
+    $category_id = $_POST['category_id']; 
     $city = $_POST['city'];
     $date = $_POST['date'];
     $time = $_POST['time'];
     $status = $_POST['status'];
 
-    // Panggil fungsi update yang sudah diperbaiki tadi
     $update = $activityModel->update($id, $title, $category_id, $city, $date, $time, $status);
 
     if ($update) {
-        header("Location: index.php"); // Kembali ke list jika sukses
+        header("Location: index.php");
         exit();
     } else {
         $error = "Gagal mengupdate data.";
@@ -87,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <option value="4" <?= $data['category_id'] == 4 ? 'selected' : '' ?>>Hiburan (Fun)</option>
                                 <option value="5" <?= $data['category_id'] == 5 ? 'selected' : '' ?>>Lainnya</option>
                             </select>
-                            <div class="form-text small">*Pastikan ID Kategori ini ada di tabel activity_categories Anda</div>
+                            <div class="form-text small"></div>
                         </div>
                     </div>
 
