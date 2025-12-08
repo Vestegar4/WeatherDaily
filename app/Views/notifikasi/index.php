@@ -10,14 +10,12 @@ require_once "../../Models/Notification.php";
 $notifModel = new Notification();
 $userId = $_SESSION['user']['id'];
 
-// 1. Handle Hapus Notifikasi
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
     $notifModel->delete($_POST['delete_id']);
     header("Location: index.php");
     exit();
 }
 
-// 2. Ambil Data Notifikasi
 $notifications = $notifModel->getByUser($userId);
 $countNotif = $notifModel->countUnread($userId);
 ?>
@@ -36,7 +34,6 @@ $countNotif = $notifModel->countUnread($userId);
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
         body { background:#f4f7fc; font-family:'Poppins', sans-serif; }
 
-        /* --- SIDEBAR STYLE --- */
         .sidebar {
             height:100vh;
             width:250px; 
@@ -60,23 +57,19 @@ $countNotif = $notifModel->countUnread($userId);
         .sidebar a:hover, .sidebar a.active { 
             background:#0d6efd;}
 
-        /* --- PERBAIKAN: PAKSA WARNA LOGOUT --- */
-        /* Kita gunakan ".sidebar a.link-logout" agar lebih spesifik */
         .sidebar a.link-logout {
-            color: #ffaaaa !important; /* Warna Merah Muda */
+            color: #ffaaaa !important; 
             margin-top: 60px !important; 
-            font-weight: 600; /* Sedikit lebih tebal biar terlihat */
+            font-weight: 600;
         }
         
         .sidebar a.link-logout:hover {
-            background: rgba(220, 53, 69, 0.2) !important; /* Background Merah Transparan */
-            color: #ff6b6b !important; /* Merah Lebih Terang saat Hover */
+            background: rgba(220, 53, 69, 0.2) !important;
+            color: #ff6b6b !important;
         }
 
-        /* --- CONTENT STYLE --- */
         .content { margin-left:260px; padding:25px; }
 
-        /* --- NOTIF CARD STYLE --- */
         .notif-card {
             background: #fff; border: none; border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 15px;
