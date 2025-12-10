@@ -1,115 +1,178 @@
 <?php
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../Models/Notification.php';
+require_once __DIR__ . '/MailService.php'; 
 
 class WeatherMonitor {
     private $conn;
     private $notificationModel;
+    private $mailService;
     private $apiKey;
 
     public function __construct() {
+        date_default_timezone_set('Asia/Jakarta');
+
         $db = new Database();
         $this->conn = $db->getConnection();
         $this->notificationModel = new Notification();
+        $this->mailService = new MailService(); 
+        $this->apiKey = $_ENV['API_WEATHER_KEY'] ?? ''; 
+    }
+    public function checkDailyRecommendation($user_id) {
+        $sql = "SELECT city, email, name FROM users WHERE id = ?";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([$user_id]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$user || empty($user['city'])) return;
+
+        $city = $user['city'];
         
-        $this->apiKey = $_ENV['OPENWEATHER_API_KEY'] ?? ''; 
+        $currentHour = (int) date('H'); 
+        $timeBlock = "";
+
+        if ($currentHour >= 5 && $currentHour < 10) $timeBlock = "Pagi";
+        elseif ($currentHour >= 10 && $currentHour < 15) $timeBlock = "Siang";
+        elseif ($currentHour >= 15 && $currentHour < 18) $timeBlock = "Sore";
+        else $timeBlock = "Malam";
+
+        $tagUnik = "[Info $timeBlock]";
+
+        if ($this->isNotificationExists($user_id, $tagUnik)) {
+             return;
+        }
+
+        $weather = $this->getWeatherForecastFromAPI($city);
+        $main = strtolower($weather['main']);
+        $temp = $weather['temp'];
+        
+        $saran = "Nikmati waktu istirahatmu.";
+        $isUrgent = false;
+
+        if (strpos($main, 'rain') !== false) {
+            $saran = "☔ <b>Hujan Turun:</b> Sedia payung jika ingin keluar.";
+            $isUrgent = true;
+        } elseif (strpos($main, 'thunder') !== false) {
+            $saran = "⚡ <b>BAHAYA:</b> Badai petir sedang terjadi.";
+            $isUrgent = true;
+        } else {
+            if ($timeBlock == "Pagi") {
+                $saran = "🌅 <b>Selamat Pagi:</b> Cuaca $main {$temp}°C.";
+            } elseif ($timeBlock == "Siang") {
+                if ($temp > 32 || strpos($main, 'clear') !== false) {
+                    $saran = "☀️ <b>Terik Siang:</b> Panas {$temp}°C. Gunakan sunscreen.";
+                    $isUrgent = true;
+                } else {
+                        $saran = "🏢 <b>Siang Hari:</b> Cuaca $main {$temp}°C.";
+                }
+            } elseif ($timeBlock == "Sore") {
+                $saran = "🌆 <b>Sore Hari:</b> Langit $main {$temp}°C.";
+            } elseif ($timeBlock == "Malam") {
+                if ($temp < 22) {
+                    $saran = "🧣 <b>Malam Dingin:</b> Suhu {$temp}°C. Pakai jaket jika keluar.";
+                    $isUrgent = true;
+                } else {
+                    $saran = "🌙 <b>Malam Hari:</b> Istirahat yang cukup.";
+                }
+            }
+        }
+
+        $finalMessage = "$tagUnik $saran"; 
+        
+        $this->notificationModel->create($user_id, $city, strip_tags($finalMessage));
+
+        if ($isUrgent && !empty($user['email'])) {
+            $this->mailService->send($user['email'], $user['name'], "⚠️ Info $timeBlock: $city", $saran);
+        }
     }
 
     public function checkUserActivities($user_id) {
         $tomorrow = date('Y-m-d', strtotime('+1 day'));
-        
         $sql = "SELECT * FROM activities WHERE user_id = ? AND activity_date = ?";
         $stmt = $this->conn->prepare($sql);
         $stmt->execute([$user_id, $tomorrow]);
         $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($activities as $activity) {
-            $this->analyzeWeather($user_id, $activity);
+            $this->analyzeActivityWeather($user_id, $activity);
         }
     }
 
-    public function checkDailyRecommendation($user_id) {
-        $sql = "SELECT city FROM users WHERE id = ?";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute([$user_id]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    private function analyzeActivityWeather($user_id, $activity) {
+        $stmtUser = $this->conn->prepare("SELECT email, name FROM users WHERE id = ?");
+        $stmtUser->execute([$user_id]);
+        $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
 
-        if (!$user || empty($user['city'])) {
-            return;
-        }
-
-        $city = $user['city'];
+        $city = $activity['city'];
+        $title = $activity['title'];
+        $timeString = $activity['time'];
         
-        if ($this->isNotificationExists($user_id, "%Rekomendasi Harian%")) {
-            return;
+        $forecast = $this->getWeatherForecastFromAPI($city); 
+        $main = strtolower($forecast['main']);
+        $temp = $forecast['temp'];
+        $jam = (int) substr($timeString, 0, 2);
+
+        $pesan = "";
+        $isBahaya = false;
+
+        if (strpos($main, 'rain') !== false) {
+            $pesan = "🌧️ <b>Hujan:</b> Kegiatan '$title' jam $timeString besok berpotensi basah.";
+            $isBahaya = true;
+        } elseif (strpos($main, 'thunder') !== false) {
+            $pesan = "⚡ <b>Badai:</b> Batalkan kegiatan '$title' besok!";
+            $isBahaya = true;
+        } elseif ($jam >= 11 && $jam <= 14 && $temp > 32) {
+            $pesan = "🔥 <b>Panas:</b> Jadwal '$title' besok di jam terik {$temp}°C.";
+            $isBahaya = true;
         }
 
-        $weather = $this->getWeatherForecastFromAPI($city);
-        $condition = strtolower($weather['main']);
-        $desc = $weather['desc'];
-
-        $saran = "Nikmati harimu!";
-
-        if (strpos($condition, 'rain') !== false || strpos($condition, 'drizzle') !== false) {
-            $saran = "☔ Jangan lupa bawa payung atau jas hujan.";
-        } elseif (strpos($condition, 'thunder') !== false) {
-            $saran = "⚡ Cuaca buruk, hindari aktivitas di luar ruangan.";
-        } elseif (strpos($condition, 'clear') !== false || strpos($condition, 'sun') !== false) {
-            $saran = "🧢 Cuaca panas terik, gunakan sunscreen dan topi.";
-        } elseif (strpos($condition, 'snow') !== false) {
-            $saran = "🧣 Sangat dingin! Pakai jaket tebal.";
-        } elseif (strpos($condition, 'cloud') !== false) {
-            $saran = "☁️ Cuaca berawan, nyaman untuk jalan santai.";
+        if ($isBahaya && !empty($pesan)) {
+            $tagAktivitas = "[Alert: $title]";
+            
+            if (!$this->isNotificationExists($user_id, $tagAktivitas)) {
+                // Simpan Tag + Pesan
+                $this->notificationModel->create($user_id, $city, "$tagAktivitas " . strip_tags($pesan));
+                
+                if (!empty($user['email'])) {
+                    $this->mailService->send($user['email'], $user['name'], "⚠️ Alert Jadwal: $title", $pesan);
+                }
+            }
         }
-
-        $message = "Rekomendasi Harian: Cuaca di $city hari ini $desc. $saran";
-        $this->notificationModel->create($user_id, $city, $message);
     }
-    
-    private function isNotificationExists($user_id, $messagePattern) {
+
+    private function isNotificationExists($user_id, $tagUnik) {
+        $today = date('Y-m-d');
+
         $sql = "SELECT COUNT(*) FROM notifications 
-                WHERE user_id = ? AND message LIKE ? AND DATE(created_at) = CURDATE()";
+                WHERE user_id = ? 
+                AND message LIKE ? 
+                AND DATE(created_at) = ?";
+        
+        $search = $tagUnik . "%"; 
+        
         $stmt = $this->conn->prepare($sql);
-        if (strpos($messagePattern, '%') === false) {
-            $stmt->execute([$user_id, $messagePattern]);
-        } else {
-            $stmt->execute([$user_id, $messagePattern]);
-        }
+        $stmt->execute([$user_id, $search, $today]);
+        
         return $stmt->fetchColumn() > 0;
     }
 
-
-    private function analyzeWeather($user_id, $activity) {
-        $city = $activity['city'];
-        
-        $forecast = $this->getWeatherForecastFromAPI($city); 
-        
-        $badWeatherKeywords = ['Rain', 'Thunderstorm', 'Drizzle', 'Snow', 'Extreme'];
-        
-        $isBadWeather = false;
-        $weatherDesc = $forecast['main'];
-
-        foreach ($badWeatherKeywords as $keyword) {
-            if (stripos($weatherDesc, $keyword) !== false) {
-                $isBadWeather = true;
-                break;
-            }
-        }
-
-        if ($isBadWeather) {
-            $message = "⚠️ Peringatan: Aktivitas '{$activity['title']}' besok di $city berpotensi hujan ($weatherDesc). Jangan lupa bawa payung atau pertimbangkan untuk membatalkan.";
-            
-            if (!$this->isNotificationExists($user_id, $message)) {
-                $this->notificationModel->create($user_id, $city, $message);
-            }
-        }
-    }
-
     private function getWeatherForecastFromAPI($city) {
-        return [
-            'main' => 'Thunderstorm', 
-            'desc' => 'heavy thunderstorm'
-        ];
+        $apiKey = $this->apiKey; 
+        if(empty($apiKey)) return ['main' => 'Clear', 'desc' => 'cerah', 'temp' => 30];
+        
+        $url = "https://api.openweathermap.org/data/2.5/weather?q=" . urlencode($city) . "&units=metric&lang=id&appid=" . $apiKey;
+        $opts = ["ssl" => ["verify_peer"=>false, "verify_peer_name"=>false]];
+        $res = @file_get_contents($url, false, stream_context_create($opts));
+        
+        if ($res) {
+            $data = json_decode($res, true);
+            return [
+                'main' => strtolower($data['weather'][0]['main']),
+                'desc' => $data['weather'][0]['description'],
+                'temp' => round($data['main']['temp'])
+            ];
+        }
+        return ['main' => 'clouds', 'desc' => 'berawan', 'temp' => 28];
     }
 }
 ?>
