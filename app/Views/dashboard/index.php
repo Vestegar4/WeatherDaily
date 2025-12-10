@@ -18,9 +18,11 @@ $log = new WeatherLog();
 $notif = new Notification();
 $monitor = new WeatherMonitor();
 
-if (isset($_SESSION['user_id'])) {
-    $monitor->checkUserActivities($_SESSION['user_id']);
-    $monitor->checkDailyRecommendation($_SESSION['user_id']);
+if (isset($_SESSION['user']) && isset($_SESSION['user']['id'])) {
+    $userId = $_SESSION['user']['id'];
+
+    $monitor->checkUserActivities($userId);
+    $monitor->checkDailyRecommendation($userId);
 }
 
 $homeCity = $_SESSION['user']['city'] ?? 'Jakarta';
@@ -137,9 +139,11 @@ $countNotif = $notif->countUnread($_SESSION['user']['id']);
         <a href="../dashboard/index.php" class="active">Dashboard</a>
         <a href="../activities/index.php">Aktivitas</a>
         <a href="../statistik/index.php">Laporan Aktivitas</a>
-        <a href="../notifikasi/index.php">
+        <a href="../notifikasi/index.php" class="active d-flex justify-content-between align-items-center">
             Notifikasi
-            <?php if ($countNotif > 0): ?><span class="badge bg-danger ms-2"><?= $countNotif ?></span><?php endif; ?>
+            <?php if ($countNotif > 0): ?>
+                <span class="badge bg-danger rounded-pill" style="font-size: 0.7rem;"><?= $countNotif ?></span>
+            <?php endif; ?>
         </a>
         <a href="../auth/logout.php" style="color:#ffdddd;">Logout</a>
     </div>
@@ -147,12 +151,12 @@ $countNotif = $notif->countUnread($_SESSION['user']['id']);
     <div class="p-3 bg-white shadow-sm d-flex justify-content-between align-items-center" style="margin-left:245px;">
         <h4 class="m-0 fw-bold text-dark">Cuaca Harian</h4>
         <a href="../auth/profile.php" class="text-decoration-none fw-bold"><?= $_SESSION['user']['name']; ?> 
-        <i class="bi bi-person-circle" style="font-size:1.5rem; margin: 4px;"></i></a>
+        <i class="bi bi-person-circle" style="font-size:1.5rem; margin-left: 8px;"></i></a>
     </div>
 
     <div class="content text-center">
         
-        <h4 class="mb-3">Cari Kota Lain</h4>
+        <h4 class="mb-3">Cek Cuaca Kota Lain</h4>
         <form method="GET" action="index.php" class="row g-3 justify-content-center mb-4">
             <div class="col-auto">
                 <input type="text" name="city" placeholder="Masukkan nama kota..." class="form-control form-control-lg shadow-sm" required>

@@ -62,8 +62,7 @@ foreach($dayStats as $row) {
             color: #dbeafe;
             text-decoration: none;
             font-size: 16px;
-            margin: 5px 10px;
-            border-radius: 8px; 
+            margin: 5px 15px;
         }
 
         .sidebar a:hover, .sidebar a.active {
@@ -73,7 +72,7 @@ foreach($dayStats as $row) {
         .content { margin-left:260px; padding:25px; }
         
         .card-stat { border:none; border-radius:15px; box-shadow:0 5px 20px rgba(0,0,0,0.05); transition:0.3s; background:#fff; }
-        .card-stat:hover { transform:translateY(-5px); }
+        .card-stat:hover { transform:translateY(-2px); }
         .icon-box { width:50px; height:50px; display:flex; align-items:center; justify-content:center; border-radius:12px; font-size:1.5rem; }
     </style>
 </head>
@@ -99,7 +98,7 @@ foreach($dayStats as $row) {
 
 <div class="p-3 bg-white shadow-sm d-flex justify-content-between align-items-center" style="margin-left:250px;">
     <h4 class="m-0 fw-bold text-dark">Analisa Data</h4>
-    <a href="../auth/profile.php" class="text-decoration-none fw-bold text-dark pe-3">
+    <a href="../auth/profile.php" class="text-decoration-none fw-bold">
         <?= $_SESSION['user']['name']; ?> 
         <i class="bi bi-person-circle text-primary" style="font-size:1.5rem; margin-left: 8px;"></i>
     </a>
