@@ -20,6 +20,7 @@ $countNotif = $notifBadge->countUnread($_SESSION['user']['id']);
     <meta charset="UTF-8">
     <title>Tambah Aktivitas - WeatherDaily</title>
     <link href="../../../node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../../../node_modules/bootstrap-icons/font/bootstrap-icons.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
 
@@ -44,7 +45,7 @@ $countNotif = $notifBadge->countUnread($_SESSION['user']['id']);
             color:#dbeafe;
             text-decoration:none;
             border-radius:8px;
-            margin:5px 10px;
+            margin:5px 15px;
         }
         .sidebar a:hover,
         .sidebar a.active {
@@ -52,14 +53,15 @@ $countNotif = $notifBadge->countUnread($_SESSION['user']['id']);
         }
 
         .content {
-            margin-left:260px;
-            padding:25px;
+            margin-left:250px;
+            padding:30px;
         }
 
         .card {
             border:none;
             border-radius:12px;
             box-shadow:0 4px 10px rgba(0,0,0,0.08);
+            border-left: 5px solid #0d6efd;
         }
     </style>
 </head>
@@ -70,19 +72,21 @@ $countNotif = $notifBadge->countUnread($_SESSION['user']['id']);
         <a href="../dashboard/index.php">Dashboard</a>
         <a href="../activities/index.php" class="active">Aktivitas</a>
         <a href="../statistik/index.php">Laporan Aktivitas</a>
-        <a href="../notifikasi/index.php">
+        <a href="../notifikasi/index.php" class="d-flex justify-content-between align-items-center">
             Notifikasi
             <?php if ($countNotif > 0): ?>
-                <span class="badge bg-danger ms-2"><?= $countNotif ?></span>
+                <span class="badge bg-danger rounded-pill" style="font-size: 0.7rem;"><?= $countNotif ?></span>
             <?php endif; ?>
         </a>
         <a href="../auth/logout.php" style="color:#ffdddd;">Logout</a>
     </div>
 
     <div class="p-3 bg-white shadow-sm d-flex justify-content-between align-items-center"
-         style="margin-left:260px;">
-        <h4 class="m-0">Tambah Aktivitas Baru</h4>
-        <span>👤 <?= htmlspecialchars($_SESSION['user']['name']); ?></span>
+         style="margin-left:245px;">
+        <h4 class="m-0 fw-bold text-dark">Tambah Aktivitas Baru</h4>
+        <a href="../auth/profile.php" class="text-decoration-none fw-bold"><?= $_SESSION['user']['name']; ?>
+        <i class="bi bi-person-circle" style="font-size:1.5rem; margin-left: 8px;"></i>
+        </a>
     </div>
 
     <div class="content">

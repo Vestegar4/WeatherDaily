@@ -93,11 +93,11 @@ foreach($dayStats as $row) {
         <?php endif; ?>
     </a>
     
-    <a href="../auth/logout.php" style="ffdddd">Logout</a>
+    <a href="../auth/logout.php" style="color: #ffdddd">Logout</a>
 </div>
 
 <div class="p-3 bg-white shadow-sm d-flex justify-content-between align-items-center" style="margin-left:250px;">
-    <h4 class="m-0 fw-bold text-dark">Analisa Data</h4>
+    <h4 class="m-0 fw-bold text-success"><i class="bi bi-pie-chart-fill"></i> Analisa Data</h4>
     <a href="../auth/profile.php" class="text-decoration-none fw-bold">
         <?= $_SESSION['user']['name']; ?> 
         <i class="bi bi-person-circle text-primary" style="font-size:1.5rem; margin-left: 8px;"></i>

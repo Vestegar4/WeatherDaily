@@ -91,7 +91,7 @@ $countNotif = $notifModel->countUnread($userId);
 </div>
 
 <div class="p-3 bg-white shadow-sm d-flex justify-content-between align-items-center" style="margin-left:245px;">
-    <h4 class="m-0 fw-bold text-dark">Pusat Notifikasi</h4>
+    <h4 class="m-0 fw-bold text-dark"><i class="bi bi-bell-fill"></i>Pusat Notifikasi</h4>
     <a href="../auth/profile.php" class="text-decoration-none fw-bold">
         <?= $_SESSION['user']['name']; ?> 
         <i class="bi bi-person-circle text-primary" style="font-size:1.5rem; margin-left: 8px;"></i>
