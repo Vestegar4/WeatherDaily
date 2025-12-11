@@ -50,7 +50,7 @@ class WeatherMonitor {
         $isUrgent = false;
 
         if (strpos($main, 'rain') !== false) {
-            $saran = "☔ <b>Hujan Turun:</b> Sedia payung jika ingin keluar.";
+            $saran = "☔ <b>Hujan Turun:</b> Sedia payung jika ingin pergi keluar.";
             $isUrgent = true;
         } elseif (strpos($main, 'thunder') !== false) {
             $saran = "⚡ <b>BAHAYA:</b> Badai petir sedang terjadi.";
@@ -130,7 +130,6 @@ class WeatherMonitor {
             $tagAktivitas = "[Alert: $title]";
             
             if (!$this->isNotificationExists($user_id, $tagAktivitas)) {
-                // Simpan Tag + Pesan
                 $this->notificationModel->create($user_id, $city, "$tagAktivitas " . strip_tags($pesan));
                 
                 if (!empty($user['email'])) {
@@ -156,23 +155,44 @@ class WeatherMonitor {
         return $stmt->fetchColumn() > 0;
     }
 
-    private function getWeatherForecastFromAPI($city) {
+    public function getWeatherForecastFromAPI($city) {
+        $cacheFile = __DIR__ . '/../../cache/weather_' . md5(strtolower($city)) . '.json';
+        $cacheTime = 3600; 
+
+        if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < $cacheTime)) {
+            $cachedData = json_decode(file_get_contents($cacheFile), true);
+            if (isset($cachedData['main'])) return $cachedData;
+        }
+
         $apiKey = $this->apiKey; 
-        if(empty($apiKey)) return ['main' => 'Clear', 'desc' => 'cerah', 'temp' => 30];
+        if(empty($apiKey)) return null;
         
         $url = "https://api.openweathermap.org/data/2.5/weather?q=" . urlencode($city) . "&units=metric&lang=id&appid=" . $apiKey;
         $opts = ["ssl" => ["verify_peer"=>false, "verify_peer_name"=>false]];
+        
         $res = @file_get_contents($url, false, stream_context_create($opts));
         
         if ($res) {
             $data = json_decode($res, true);
-            return [
+            
+            if (isset($data['cod']) && $data['cod'] != 200) {
+                return null;
+            }
+
+            $formattedData = [
                 'main' => strtolower($data['weather'][0]['main']),
                 'desc' => $data['weather'][0]['description'],
-                'temp' => round($data['main']['temp'])
+                'temp' => round($data['main']['temp']),
+                'city_name' => $data['name']
             ];
+
+            if (!is_dir(dirname($cacheFile))) mkdir(dirname($cacheFile), 0777, true);
+            file_put_contents($cacheFile, json_encode($formattedData));
+
+            return $formattedData;
         }
-        return ['main' => 'clouds', 'desc' => 'berawan', 'temp' => 28];
+
+        return null; 
     }
 }
 ?>
