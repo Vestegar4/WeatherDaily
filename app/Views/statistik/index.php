@@ -10,6 +10,21 @@ $activityModel = new Activity();
 $notifBadge = new Notification();
 $analytics = new AnalyticsService();
 
+require_once "../../Models/WeatherLog.php";
+
+$weatherLogModel = new WeatherLog();
+
+$userCity = $_SESSION['user']['city'] ?? 'Jakarta';
+$historyData = $weatherLogModel->getHistoryByCity($userCity);
+
+$histLabels = [];
+$histTemps = [];
+
+foreach($historyData as $h) {
+    $histLabels[] = date('d M H:i', strtotime($h['created_at']));
+    $histTemps[] = $h['temperature'];
+}
+
 $countNotif = $notifBadge->countUnread($_SESSION['user']['id']);
 $summary = $analytics->getSummary($_SESSION['user']['id']);
 
@@ -112,9 +127,13 @@ foreach($dayStats as $row) {
             <p class="text-secondary mb-0">Ringkasan produktivitas & pola kegiatan Anda</p>
         </div>
         
-        <a href="../../Controllers/ExportController.php" class="btn btn-success shadow-sm px-4 py-2" style="border-radius: 50px;">
-            <i class="bi bi-file-earmark-spreadsheet me-2"></i>Export CSV
+        <a href="../../Controllers/ExportController.php?type=weather" class="btn btn-info text-white shadow-sm px-3 py-2 me-2" style="border-radius: 50px;">
+                <i class="bi bi-cloud-download me-2"></i>CSV Cuaca
+            </a>
         </a>
+        <a href="../../Controllers/ExportController.php?type=activity" class="btn btn-success shadow-sm px-3 py-2" style="border-radius: 50px;">
+                <i class="bi bi-file-earmark-spreadsheet me-2"></i>CSV Aktivitas
+            </a>
     </div>
     
     <div class="row g-4 mb-4">
@@ -187,6 +206,36 @@ foreach($dayStats as $row) {
             </div>
         </div>
 
+            <div class="row mt-4">
+            <div class="col-12">
+                <div class="card card-stat p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-thermometer-sun text-danger me-2"></i>
+                            Tren Riwayat Suhu (Database)
+                        </h5>
+                        <span class="badge bg-primary bg-opacity-10 text-primary">
+                            Lokasi: <?= htmlspecialchars($userCity) ?>
+                        </span>
+                    </div>
+                    
+                    <?php if(!empty($histLabels)): ?>
+                        <div style="height: 300px;">
+                            <canvas id="tempHistoryChart"></canvas>
+                        </div>
+                        <p class="text-muted small mt-2 text-center">*Data diambil dari riwayat pencatatan cuaca di database Anda.</p>
+                    <?php else: ?>
+                        <div class="alert alert-light text-center py-5 text-muted">
+                            <i class="bi bi-cloud-slash fs-1 opacity-25"></i><br>
+                            Belum ada riwayat suhu. Buka Dashboard beberapa kali untuk merekam data.
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+        
+</div>
+
     </div>
 </div>
 
@@ -241,6 +290,54 @@ foreach($dayStats as $row) {
                 scales: {
                     y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
                     x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    const histLabels = <?= json_encode($histLabels); ?>;
+    const histTemps = <?= json_encode($histTemps); ?>;
+
+    if (histLabels.length > 0) {
+        new Chart(document.getElementById('tempHistoryChart'), {
+            type: 'line',
+            data: {
+                labels: histLabels,
+                datasets: [{
+                    label: 'Suhu (°C)',
+                    data: histTemps,
+                    borderColor: '#dc3545',
+                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#dc3545',
+                    pointRadius: 5,
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y + ' °C';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: false, 
+                        grid: { borderDash: [5, 5] },
+                        title: { display: true, text: 'Celcius' }
+                    },
+                    x: { 
+                        grid: { display: false } 
+                    }
                 }
             }
         });
