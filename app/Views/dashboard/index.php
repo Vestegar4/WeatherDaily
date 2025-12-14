@@ -28,6 +28,17 @@ if (isset($_SESSION['user']) && isset($_SESSION['user']['id'])) {
 $homeCity = $_SESSION['user']['city'] ?? 'Jakarta';
 $weatherHome = $api->getWeatherByCity($homeCity);
 
+if ($weatherHome && isset($weatherHome['cod']) && $weatherHome['cod'] == 200) {
+    $log->save(
+        $homeCity,
+        $weatherHome['main']['temp'],
+        $weatherHome['main']['humidity'],
+        $weatherHome['wind']['speed'],
+        $weatherHome['weather'][0]['main'],
+        $weatherHome['weather'][0]['description']
+    );
+}
+
 $forecastData = $api->getForecastByCity($homeCity);
 $chartLabels = [];
 $chartTemps = [];
@@ -41,8 +52,8 @@ if (isset($forecastData['list'])) {
         if ($date != $today && !in_array($date, $processedDates)) {
             if (strpos($item['dt_txt'], '12:00') !== false || strpos($item['dt_txt'], '15:00') !== false) {
                 $processedDates[] = $date;
-                $chartLabels[] = date('l, d M', $item['dt']); // Label Hari
-                $chartTemps[] = round($item['main']['temp']); // Data Suhu
+                $chartLabels[] = date('l, d M', $item['dt']);
+                $chartTemps[] = round($item['main']['temp']);
             }
         }
     }
