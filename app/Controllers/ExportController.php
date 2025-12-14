@@ -7,24 +7,32 @@ if (!isset($_SESSION['user'])) { exit(); }
 $activityModel = new Activity();
 $data = $activityModel->getAllByUser($_SESSION['user']['id']);
 
-header('Content-Type: text/csv');
-header('Content-Disposition: attachment; filename="laporan_aktivitas.csv"');
+header('Content-Type: text/csv; charset=utf-8');
+header('Content-Disposition: attachment; filename="Laporan_Aktivitas_' . date('Y-m-d') . '.csv"');
 
 $output = fopen('php://output', 'w');
 
-fputcsv($output, ['ID', 'Judul', 'Kategori', 'Kota', 'Tanggal', 'Waktu', 'Status']);
+fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
 
+fputcsv($output, ['No', 'Judul Aktivitas', 'Kategori', 'Kota', 'Tanggal', 'Waktu', 'Status'], ';');
+
+$no = 1;
 foreach ($data as $row) {
+    $statusIndo = ($row['status'] == 'done') ? 'Selesai' : 'Rencana';
+    
+    $tanggalIndo = date('d-m-Y', strtotime($row['activity_date']));
+
     fputcsv($output, [
-        $row['id'], 
+        $no++, 
         $row['title'], 
-        $row['category_name'] ?? $row['category_id'],
+        $row['category_name'] ?? $row['category_id'] ?? '-',
         $row['city'], 
-        $row['activity_date'], 
+        $tanggalIndo, 
         $row['time'], 
-        $row['status']
-    ]);
+        $statusIndo
+    ], ';');
 }
+
 fclose($output);
 exit();
 ?>

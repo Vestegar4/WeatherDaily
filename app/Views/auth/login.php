@@ -4,6 +4,7 @@ session_start();
 require_once '../../../config/google_init.php';
 
 $login_url = $client->createAuthUrl();
+
 ?>
 
 <!DOCTYPE html>
@@ -109,6 +110,14 @@ $login_url = $client->createAuthUrl();
         </div>
         
         <h3 class="fw-bold"> Selamat Datang </h3>
+        
+        <?php if (isset($_SESSION['error'])): ?>
+            <div class="alert alert-danger py-2 text-center shadow-sm border-0 mb-4" role="alert" style="font-size: 0.9rem;">
+                <i class="bi bi-exclamation-circle-fill me-1"></i> 
+                <?= $_SESSION['error']; unset($_SESSION['error']); ?>
+            </div>
+        <?php endif; ?>
+
         <p class="text-muted small">Masuk untuk mengelola aktivitas harianmu.</p>
         
         <form action="../../Controllers/AuthController.php?action=login" method="POST">

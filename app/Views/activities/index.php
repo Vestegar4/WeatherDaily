@@ -8,6 +8,7 @@ require_once "../../Models/Notification.php";
 $activityModel = new Activity();
 $notifBadge = new Notification();
 
+$userId = $_SESSION['user']['id'];
 $activities = $activityModel->getAllByUser($_SESSION['user']['id']);
 $countNotif = $notifBadge->countUnread($_SESSION['user']['id']);
 ?>
