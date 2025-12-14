@@ -9,6 +9,7 @@ class Activity {
         $db = new Database();
         $this->conn = $db->getConnection();
     }
+
     public function create($user_id, $category_id, $title, $city, $date, $time, $status) {
         $sql = "INSERT INTO " . $this->table . " (user_id, category_id, title, city, activity_date, time, status)
                 VALUES (:user_id, :category_id, :title, :city, :activity_date, :time, :status)";
@@ -73,14 +74,16 @@ class Activity {
     }
 
     public function getAllByUser($user_id) {
-        $sql = "SELECT a.*, c.name AS category_name
-                FROM activities a
-                JOIN activity_categories c ON a.category_id = c.id
-                WHERE a.user_id = ?
-                ORDER BY a.created_at DESC";
+        $query = "SELECT * FROM " . $this->table . " 
+                  WHERE user_id = :user_id 
+                  ORDER BY 
+                    CASE WHEN status = 'done' THEN 1 ELSE 0 END ASC, 
+                    activity_date DESC, 
+                    time DESC";
 
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute([$user_id]);
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':user_id', $user_id); 
+        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -111,10 +114,20 @@ class Activity {
             $id
         ]);
     }
+
     public function updateStatus($id, $status) {
-        $sql = "UPDATE {$this->table} SET status = ? WHERE id = ?";
-        $stmt = $this->conn->prepare($sql);
-        return $stmt->execute([$status, $id]);
+        $query = "UPDATE " . $this->table . " SET status = :status WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':status', $status);
+        $stmt->bindParam(':id', $id);
+        return $stmt->execute();
+    }
+
+    public function save($data) {
+        $query = "INSERT INTO " . $this->table . "
+         (user_id, title, city, activity_date, time, status, created_at) VALUES (:user_id, :title, :city, :activity_date, :time, 'plan', NOW())";
+        $stmt = $this->conn->prepare($query);
+        return $stmt->execute($data);
     }
 }
 ?>
