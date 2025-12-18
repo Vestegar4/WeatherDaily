@@ -40,4 +40,39 @@ if ($action == "login") {
         exit();
     }
 }
+
+elseif ($action == "change_password") {
+    if (!isset($_SESSION['user'])) {
+        header("Location: ../Views/auth/login.php");
+        exit();
+    }
+
+    $id = $_SESSION['user']['id'];
+    $oldPass = $_POST['old_password'];
+    $newPass = $_POST['new_password'];
+    $confirmPass = $_POST['confirm_password'];
+
+    if ($newPass !== $confirmPass) {
+        $_SESSION['error'] = "Password baru dan konfirmasi tidak cocok!";
+        header("Location: ../Views/auth/profile.php");
+        exit();
+    }
+
+    $currentHash = $user->getPasswordById($id);
+    if (!password_verify($oldPass, $currentHash)) {
+        $_SESSION['error'] = "Password lama salah!";
+        header("Location: ../Views/auth/profile.php");
+        exit();
+    }
+
+    $newHash = password_hash($newPass, PASSWORD_DEFAULT);
+    if ($user->updatePassword($id, $newHash)) {
+        $_SESSION['success'] = "Password berhasil diubah!";
+    } else {
+        $_SESSION['error'] = "Gagal mengubah password (Database Error).";
+    }
+    
+    header("Location: ../Views/auth/profile.php");
+    exit();
+}
 ?>

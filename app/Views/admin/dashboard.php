@@ -1,6 +1,8 @@
 <?php
 session_start();
 require_once __DIR__ . "/../../../config/database.php";
+require_once "../../Models/Notification.php";
+require_once "../../Models/User.php";
 
 if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
     header("Location: ../auth/login.php");
@@ -15,6 +17,24 @@ $totalUser = $stmt->fetchColumn();
 
 $stmt = $conn->query("SELECT COUNT(*) FROM activities");
 $totalActivity = $stmt->fetchColumn();
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['broadcast_msg'])) {
+    $notifModel = new Notification();
+    $userModel = new User();
+    
+    $db = new Database();
+    $conn = $db->getConnection();
+    $stmt = $conn->query("SELECT id FROM users");
+    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $msg = "📢 [INFO ADMIN] " . $_POST['message'];
+    foreach($users as $u) {
+        $notifModel->create($u['id'], 'Sistem Pusat', $msg);
+    }
+    
+    $successMsg = "Broadcast berhasil dikirim ke " . count($users) . " user!";
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -65,7 +85,7 @@ $totalActivity = $stmt->fetchColumn();
 
     <div class="flex-grow-1 p-4">
         <h2 class="fw-bold mb-4">Selamat Datang, <?= htmlspecialchars($_SESSION['user']['name']) ?>!</h2>
-
+        
         <div class="row g-4 mb-5">
             <div class="col-md-4">
                 <div class="card card-stat bg-primary text-white p-3">
@@ -80,13 +100,32 @@ $totalActivity = $stmt->fetchColumn();
                 </div>
             </div>
         </div>
-
+        
+        <div class="col-md-12 mt-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-megaphone-fill"></i> Broadcast Notifikasi Massal</h5>
+                </div>
+                <div class="card-body">
+                    <?php if(isset($successMsg)) echo "<div class='alert alert-success'>$successMsg</div>"; ?>
+                    
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Pesan untuk semua pengguna:</label>
+                            <textarea name="message" class="form-control" rows="3" placeholder="Contoh: Server akan maintenance malam ini..." required></textarea>
+                        </div>
+                        <button type="submit" name="broadcast_msg" class="btn btn-dark">
+                            <i class="bi bi-send-fill"></i> Kirim ke Semua User
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
         <div class="alert alert-info">
             <i class="bi bi-info-circle me-2"></i> 
             Halo Admin! Di sini Anda memiliki kontrol penuh. Harap berhati-hati saat menghapus data user.
         </div>
     </div>
 </div>
-
 </body>
 </html>
