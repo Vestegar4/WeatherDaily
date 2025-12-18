@@ -42,5 +42,16 @@ class User {
         $stmt->bind_param("si", $city, $id);
         return $stmt->execute();
     }
-
+    public function updatePassword($id, $newPasswordHash) {
+        $sql = "UPDATE users SET password = ? WHERE id = ?";
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute([$newPasswordHash, $id]);
+    }
+    
+    public function getPasswordById($id) {
+        $sql = "SELECT password FROM users WHERE id = ?";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([$id]);
+        return $stmt->fetchColumn();
+    }
 }
