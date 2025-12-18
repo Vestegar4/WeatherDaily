@@ -93,7 +93,16 @@ $countNotif = $notifBadge->countUnread($_SESSION['user']['id']);
         <div class="card p-4">
             <h5 class="mb-3">Isi form berikut untuk menambahkan aktivitas.</h5>
 
-            <form method="POST" action="store.php">
+            <?php if (isset($_SESSION['error'])): ?>
+                <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+                    <i class="bi bi-exclamation-circle-fill me-2"></i> 
+                    <?= $_SESSION['error']; unset($_SESSION['error']); ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            <?php endif; ?>
+            
+            <form method="POST" action="../../Controllers/ActivityController.php?action=create">
+
                 <div class="mb-3">
                     <label class="form-label">Judul Aktivitas</label>
                     <input type="text" name="title" class="form-control" required>

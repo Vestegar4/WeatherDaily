@@ -18,7 +18,7 @@ class MailService {
     public function __construct() {
         $this->mail = new PHPMailer(true);
 
-        $this->mail->SMTPDebug = 1; 
+        $this->mail->SMTPDebug = 0; 
         $this->mail->Debugoutput = 'html'; 
 
         $this->mail->CharSet = 'UTF-8';
