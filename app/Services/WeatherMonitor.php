@@ -16,8 +16,10 @@ class WeatherMonitor {
         $this->conn = $db->getConnection();
         $this->notificationModel = new Notification();
         $this->mailService = new MailService(); 
-        $this->apiKey = $_ENV['API_WEATHER_KEY'] ?? ''; 
+        
+        $this->apiKey = $_ENV['OPENWEATHER_API_KEY'] ?? $_ENV['API_WEATHER_KEY'] ?? ''; 
     }
+
     public function checkDailyRecommendation($user_id) {
         $sql = "SELECT city, email, name FROM users WHERE id = ?";
         $stmt = $this->conn->prepare($sql);
@@ -43,6 +45,9 @@ class WeatherMonitor {
         }
 
         $weather = $this->getWeatherForecastFromAPI($city);
+        
+        if (!$weather) return;
+
         $main = strtolower($weather['main']);
         $temp = $weather['temp'];
         
@@ -57,7 +62,7 @@ class WeatherMonitor {
             $isUrgent = true;
         } else {
             if ($timeBlock == "Pagi") {
-                $saran = "🌅 <b>Selamat Pagi:</b> Cuaca $main {$temp}°C.";
+                $saran = "🌅 <b>Selamat Pagi:</b> Cuaca $main {$temp}°C. Waktu tepat untuk aktivitas luar.";
             } elseif ($timeBlock == "Siang") {
                 if ($temp > 32 || strpos($main, 'clear') !== false) {
                     $saran = "☀️ <b>Terik Siang:</b> Panas {$temp}°C. Gunakan sunscreen.";
@@ -97,6 +102,22 @@ class WeatherMonitor {
             $this->analyzeActivityWeather($user_id, $activity);
         }
     }
+    
+    public function checkActivityDirectly($user_id, $city, $title, $time, $category_id) {
+        $activityMock = [
+            'city' => $city,
+            'title' => $title,
+            'time' => $time,
+            'activity_date' => date('Y-m-d'),
+            'category_id' => $category_id
+        ];
+        
+        if (isset($_POST['date'])) {
+            $activityMock['activity_date'] = $_POST['date'];
+        }
+
+        $this->analyzeActivityWeather($user_id, $activityMock);
+    }
 
     private function analyzeActivityWeather($user_id, $activity) {
         $stmtUser = $this->conn->prepare("SELECT email, name FROM users WHERE id = ?");
@@ -106,24 +127,49 @@ class WeatherMonitor {
         $city = $activity['city'];
         $title = $activity['title'];
         $timeString = $activity['time'];
+        $dateString = $activity['activity_date'] ?? date('Y-m-d');
+        $catId = $activity['category_id'];
         
-        $forecast = $this->getWeatherForecastFromAPI($city); 
+        $forecast = $this->getWeatherForecastFromAPI($city, $dateString, $timeString); 
+        
+        if (!$forecast) return;
+
         $main = strtolower($forecast['main']);
         $temp = $forecast['temp'];
         $jam = (int) substr($timeString, 0, 2);
 
         $pesan = "";
+        $judulEmail = "";
         $isBahaya = false;
 
-        if (strpos($main, 'rain') !== false) {
-            $pesan = "🌧️ <b>Hujan:</b> Kegiatan '$title' jam $timeString besok berpotensi basah.";
+        if (strpos($main, 'rain') !== false || strpos($main, 'drizzle') !== false) {
+            
+            if ($catId == 2 || $catId == 4) { // Kategori Outdoor
+                $judulEmail = "⛔ REKOMENDASI PEMBATALAN: $title";
+                $pesan = "🌧️ <b>Hujan Turun!</b> Kegiatan '$title' di $city pada jam $timeString diprediksi hujan ($main). <br>
+                          Rekomendasi: <b>BATALKAN</b> atau ganti Indoor.";
+            } 
+            else {
+                $judulEmail = "☔ Siapkan Payung: $title";
+                $pesan = "🌧️ <b>Sedia Payung!</b> Pada jam $timeString diprediksi hujan ($main). <br>
+                          Jangan lupa bawa payung.";
+            }
             $isBahaya = true;
-        } elseif (strpos($main, 'thunder') !== false) {
-            $pesan = "⚡ <b>Badai:</b> Batalkan kegiatan '$title' besok!";
+
+        } 
+        elseif (strpos($main, 'thunder') !== false) {
+            $judulEmail = "⚡ BAHAYA BADAI: $title";
+            $pesan = "⚡ <b>PERINGATAN BADAI!</b> Cuaca ekstrem ($main) terdeteksi di $city pada jam $timeString. <br>
+                      Demi keselamatan, harap <b>BATALKAN</b> kegiatan '$title'.";
             $isBahaya = true;
-        } elseif ($jam >= 11 && $jam <= 14 && $temp > 32) {
-            $pesan = "🔥 <b>Panas:</b> Jadwal '$title' besok di jam terik {$temp}°C.";
-            $isBahaya = true;
+        } 
+        elseif ($jam >= 11 && $jam <= 14 && $temp > 33) {
+            if ($catId == 2) {
+                $judulEmail = "🔥 Bahaya Heatstroke: $title";
+                $pesan = "🔥 <b>Panas Ekstrem ({$temp}°C)!</b> Olahraga '$title' di jam segini berbahaya. <br>
+                          Saran: Geser ke sore hari.";
+                $isBahaya = true;
+            }
         }
 
         if ($isBahaya && !empty($pesan)) {
@@ -133,7 +179,7 @@ class WeatherMonitor {
                 $this->notificationModel->create($user_id, $city, "$tagAktivitas " . strip_tags($pesan));
                 
                 if (!empty($user['email'])) {
-                    $this->mailService->send($user['email'], $user['name'], "⚠️ Alert Jadwal: $title", $pesan);
+                    $this->mailService->send($user['email'], $user['name'], $judulEmail, $pesan);
                 }
             }
         }
@@ -141,58 +187,86 @@ class WeatherMonitor {
 
     private function isNotificationExists($user_id, $tagUnik) {
         $today = date('Y-m-d');
-
-        $sql = "SELECT COUNT(*) FROM notifications 
-                WHERE user_id = ? 
-                AND message LIKE ? 
-                AND DATE(created_at) = ?";
-        
+        $sql = "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND message LIKE ? AND DATE(created_at) = ?";
         $search = $tagUnik . "%"; 
-        
         $stmt = $this->conn->prepare($sql);
         $stmt->execute([$user_id, $search, $today]);
-        
         return $stmt->fetchColumn() > 0;
     }
 
-    public function getWeatherForecastFromAPI($city) {
-        $cacheFile = __DIR__ . '/../../cache/weather_' . md5(strtolower($city)) . '.json';
-        $cacheTime = 3600; 
-
-        if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < $cacheTime)) {
-            $cachedData = json_decode(file_get_contents($cacheFile), true);
-            if (isset($cachedData['main'])) return $cachedData;
-        }
-
+    public function getWeatherForecastFromAPI($city, $targetDate = null, $targetTime = null) {
         $apiKey = $this->apiKey; 
         if(empty($apiKey)) return null;
         
-        $url = "https://api.openweathermap.org/data/2.5/weather?q=" . urlencode($city) . "&units=metric&lang=id&appid=" . $apiKey;
+        $url = "https://api.openweathermap.org/data/2.5/forecast?q=" . urlencode($city) . "&units=metric&lang=id&appid=" . $apiKey;
         $opts = ["ssl" => ["verify_peer"=>false, "verify_peer_name"=>false]];
         
-        $res = @file_get_contents($url, false, stream_context_create($opts));
+        $cacheFile = __DIR__ . '/../../cache/forecast_' . md5(strtolower($city)) . '.json';
         
-        if ($res) {
-            $data = json_decode($res, true);
-            
-            if (isset($data['cod']) && $data['cod'] != 200) {
-                return null;
+        if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < 3600)) {
+            $jsonRes = file_get_contents($cacheFile);
+        } else {
+            $jsonRes = @file_get_contents($url, false, stream_context_create($opts));
+            if ($jsonRes) {
+                if (!is_dir(dirname($cacheFile))) mkdir(dirname($cacheFile), 0777, true);
+                file_put_contents($cacheFile, $jsonRes);
             }
-
-            $formattedData = [
-                'main' => strtolower($data['weather'][0]['main']),
-                'desc' => $data['weather'][0]['description'],
-                'temp' => round($data['main']['temp']),
-                'city_name' => $data['name']
-            ];
-
-            if (!is_dir(dirname($cacheFile))) mkdir(dirname($cacheFile), 0777, true);
-            file_put_contents($cacheFile, json_encode($formattedData));
-
-            return $formattedData;
         }
 
-        return null; 
+        if (!$jsonRes) return null;
+        
+        $data = json_decode($jsonRes, true);
+        if (isset($data['cod']) && $data['cod'] != "200") return null;
+
+        $selectedItem = $data['list'][0]; 
+
+        if ($targetDate && $targetTime) {
+            $targetTimestamp = strtotime("$targetDate $targetTime");
+            $minDiff = PHP_INT_MAX;
+            
+            foreach ($data['list'] as $item) {
+                $itemTime = $item['dt'];
+                $diff = abs($itemTime - $targetTimestamp);
+                
+                if ($diff < $minDiff) {
+                    $minDiff = $diff;
+                    $selectedItem = $item;
+                }
+            }
+        }
+
+        return [
+            'main' => strtolower($selectedItem['weather'][0]['main']),
+            'desc' => $selectedItem['weather'][0]['description'],
+            'temp' => round($selectedItem['main']['temp']),
+            'city_name' => $data['city']['name']
+        ];
+    }
+
+    public function getSmartRecommendation($temp, $main, $humidity) {
+        $recommendations = [];
+
+        if ($temp >= 30) {
+            $recommendations['outfit'] = "👕 <b>Panas!</b> Pakai kaos tipis, kacamata hitam, & sunscreen.";
+        } elseif ($temp <= 24) {
+            $recommendations['outfit'] = "🧥 <b>Agak Dingin.</b> Gunakan jaket ringan atau hoodie.";
+        } else {
+            $recommendations['outfit'] = "👕 <b>Nyaman.</b> Gunakan pakaian kasual biasa.";
+        }
+        
+        if (strpos(strtolower($main), 'rain') !== false || strpos(strtolower($main), 'drizzle') !== false) {
+            $recommendations['gear'] = "☂️ <b>Hujan Turun.</b> Wajib bawa payung atau jas hujan.";
+        }
+
+        if ($humidity < 40) {
+            $recommendations['health'] = "💧 <b>Udara Kering!</b> Minum lebih banyak air agar tidak dehidrasi.";
+        } elseif ($humidity > 85) {
+            $recommendations['health'] = "😓 <b>Lembab Tinggi.</b> Hindari aktivitas fisik berat.";
+        } else {
+            $recommendations['health'] = "✅ <b>Udara Ideal.</b> Bagus untuk beraktivitas fisik.";
+        }
+
+        return $recommendations;
     }
 }
 ?>
