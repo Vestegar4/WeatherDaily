@@ -136,8 +136,8 @@ Gunakan kredensial berikut untuk pengujian sistem tanpa perlu registrasi ulang:
 📂 Struktur Direktori (MVC Architecture)
 Bash
 
-WeatherDaily/
-├── app/
+WeatherDaily/ 
+├── app/ 
 │   ├── Controllers/   
 │   ├── Models/        
 │   ├── Views/         
