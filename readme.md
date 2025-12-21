@@ -151,9 +151,9 @@ WeatherDaily/
 ---
 ## Tim Pengembang
 **Nama: 
-** Muhammad Rifqy Hamzah (24416255201016)
-** Muhammad Yussuf Abrory (24416255201250)
-** Tegar Maulana Akbar (24416255201024)
+* Muhammad Rifqy Hamzah (24416255201016)
+* Muhammad Yussuf Abrory (24416255201250)
+* Tegar Maulana Akbar (24416255201024)
 
 **Program Studi:** TEKNIK INFORMATIKA
 
