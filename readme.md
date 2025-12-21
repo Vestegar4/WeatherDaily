@@ -134,8 +134,7 @@ Gunakan kredensial berikut untuk pengujian sistem tanpa perlu registrasi ulang:
 | **User** | `user@weatherdaily.com` | `user123` | Buat Jadwal, Cek Cuaca, Edit Profil |
 ---
 📂 Struktur Direktori (MVC Architecture)
-Bash
-
+```bash
 WeatherDaily/ 
 ├── app/ 
 │   ├── Controllers/   
@@ -147,7 +146,7 @@ WeatherDaily/
 ├── vendor/            
 ├── node_modules/      
 └── .env               
-
+```
 ---
 ## Tim Pengembang
 **Nama: 
