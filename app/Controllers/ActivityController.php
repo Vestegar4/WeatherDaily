@@ -11,12 +11,12 @@ $monitor = new WeatherMonitor();
 
 $action = $_GET['action'] ?? '';
 
-if ($action == "create") {
+    if ($action == "create") {
     $city = $_POST['city'];
 
     $checkWeather = $api->getWeatherByCity($city);
     if (!$checkWeather || (isset($checkWeather['cod']) && $checkWeather['cod'] != 200)) {
-        $_SESSION['error'] = "Kota '$city' tidak ditemukan! Pastikan ejaan benar.";
+        $_SESSION['error'] = "Kota '$city' tidak ditemukan! Pastikan ejaan nama kota nya benar.";
         header("Location: ../Views/activities/create.php");
         exit();
     }
