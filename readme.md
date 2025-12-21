@@ -102,16 +102,16 @@ Buka terminal (Git Bash / CMD) dan arahkan ke folder `www`
 5.  **Konfigurasi .env:**
     * Duplikat `.env.example` menjadi `.env`.
     sesuaikan konfigurasi berikut:
-    # Database Configuration
-    DB_HOST=localhost
-    DB_NAME=weatherdaily
-    DB_USER=root
-    DB_PASS=
+    Database Configuration
+    * DB_HOST=localhost
+    * DB_NAME=weatherdaily
+    * DB_USER=root
+    * DB_PASS=
 
-    # OpenWeatherMap API Key (Daftar Gratis di openweathermap.org)
+    OpenWeatherMap API Key (Daftar Gratis di openweathermap.org)
     API_WEATHER_KEY=masukkan_api_key_anda_disini
 
-    # SMTP Email Configuration (Untuk OTP & Notif)
+    SMTP Email Configuration (Untuk OTP & Notif)
     SMTP_HOST=smtp.gmail.com
     SMTP_USER=email_anda@gmail.com
     SMTP_PASS=password_aplikasi_google_anda
@@ -129,8 +129,8 @@ Buka terminal (Git Bash / CMD) dan arahkan ke folder `www`
 
 Gunakan kredensial berikut untuk pengujian sistem tanpa perlu registrasi ulang:
 Role	Email	Password	Hak Akses
-Administrator	admin@weatherdaily.com	admin123	Manajemen User, Hapus Aktivitas, Monitoring
-User	user@gmail.com	user123	Buat Jadwal, Cek Cuaca, Edit Profil
+Administrator	admin@weatherdaily.com	123456	Manajemen User, Hapus Aktivitas, Monitoring
+User	user@gmail.com	123456	Buat Jadwal, Cek Cuaca, Edit Profil
 
 ---
 📂 Struktur Direktori (MVC Architecture)
