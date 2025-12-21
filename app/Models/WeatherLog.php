@@ -9,6 +9,18 @@ class WeatherLog {
         $this->conn = $db->getConnection();
     }
 
+    public function getHistoryByCity($city, $limit = 10) {
+        $sql = "SELECT * FROM " . $this->table . " 
+                WHERE city = ? 
+                ORDER BY created_at DESC LIMIT " . (int)$limit;
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([$city]);
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        return array_reverse($result);
+    }
+
     public function getTemperatureHistory($user_id) {
         $sql = "SELECT city, temperature, created_at FROM " . $this->table . " ORDER BY created_at ASC";
         $stmt = $this->conn->prepare($sql);

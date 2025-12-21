@@ -1,31 +1,32 @@
 <?php
 require_once __DIR__ . '/../vendor/autoload.php';
 
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../'); 
-$dotenv->load();
+use Dotenv\Dotenv;
+$dotenv = Dotenv::createImmutable(__DIR__ . '/../');
+$dotenv->safeLoad();
+
 class Database {
-    private $host;
-    private $db_name;
-    private $username;
-    private $password;
     public $conn;
 
     public function getConnection() {
         $this->conn = null;
 
-        $this->host=$_ENV['DB_HOST'] ?? 'localhost';
-        $this->db_name=$_ENV['DB_NAME'];
-        $this->username=$_ENV['DB_USER'];
-        $this->password=$_ENV['DB_PASS'];
-
         try {
-            $this->conn = new PDO("mysql:host=" . $this->host . ";dbname=" . $this->db_name,
-             $this->username, $this->password);
+            $host = $_ENV['DB_HOST'] ?? '';
+            $db_name = $_ENV['DB_NAME'] ?? '';
+            $username = $_ENV['DB_USER'] ?? '';
+            $password = $_ENV['DB_PASS'] ?? '';
+
+            $dsn = "mysql:host=" . $host . ";dbname=" . $db_name . ";charset=utf8mb4";
+
+            $this->conn = new PDO($dsn, $username, $password);
+            
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $this->conn->exec("set names utf8");
+
         } catch(PDOException $exception) {
-            echo "Connection error: " . $exception->getMessage();
+            die("<h3>Database Connection Error:</h3> " . $exception->getMessage());
         }
+
         return $this->conn;
     }
 }

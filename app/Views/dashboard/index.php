@@ -18,13 +18,26 @@ $log = new WeatherLog();
 $notif = new Notification();
 $monitor = new WeatherMonitor();
 
-if (isset($_SESSION['user_id'])) {
-    $monitor->checkUserActivities($_SESSION['user_id']);
-    $monitor->checkDailyRecommendation($_SESSION['user_id']);
+if (isset($_SESSION['user']) && isset($_SESSION['user']['id'])) {
+    $userId = $_SESSION['user']['id'];
+
+    $monitor->checkUserActivities($userId);
+    $monitor->checkDailyRecommendation($userId);
 }
 
 $homeCity = $_SESSION['user']['city'] ?? 'Jakarta';
 $weatherHome = $api->getWeatherByCity($homeCity);
+
+if ($weatherHome && isset($weatherHome['cod']) && $weatherHome['cod'] == 200) {
+    $log->save(
+        $homeCity,
+        $weatherHome['main']['temp'],
+        $weatherHome['main']['humidity'],
+        $weatherHome['wind']['speed'],
+        $weatherHome['weather'][0]['main'],
+        $weatherHome['weather'][0]['description']
+    );
+}
 
 $forecastData = $api->getForecastByCity($homeCity);
 $chartLabels = [];
@@ -39,14 +52,15 @@ if (isset($forecastData['list'])) {
         if ($date != $today && !in_array($date, $processedDates)) {
             if (strpos($item['dt_txt'], '12:00') !== false || strpos($item['dt_txt'], '15:00') !== false) {
                 $processedDates[] = $date;
-                $chartLabels[] = date('l, d M', $item['dt']); // Label Hari
-                $chartTemps[] = round($item['main']['temp']); // Data Suhu
+                $chartLabels[] = date('l, d M', $item['dt']);
+                $chartTemps[] = round($item['main']['temp']);
             }
         }
     }
 }
 
 $weatherSearch = null;
+$errorMsg = "";
 $searchCity = null;
 
 if (isset($_GET['city']) && !empty($_GET['city'])) {
@@ -54,7 +68,7 @@ if (isset($_GET['city']) && !empty($_GET['city'])) {
     $weatherSearch = $api->getWeatherByCity($searchCity);
 
     if ($weatherSearch && isset($weatherSearch['cod']) && $weatherSearch['cod'] == 200) {
-        // Log pencarian
+        
         $log->save(
             $searchCity,
             $weatherSearch['main']['temp'],
@@ -76,6 +90,9 @@ if (isset($_GET['city']) && !empty($_GET['city'])) {
         if ($message) {
             $notif->create($_SESSION['user']['id'], $searchCity, $message);
         }
+    } else {
+        $errorMsg = "Maaf, kota '$searchCity' tidak ditemukan. Silakan cek kembali nama kota yang dicari.";
+        $weatherSearch = null;
     }
 }
 
@@ -137,22 +154,24 @@ $countNotif = $notif->countUnread($_SESSION['user']['id']);
         <a href="../dashboard/index.php" class="active">Dashboard</a>
         <a href="../activities/index.php">Aktivitas</a>
         <a href="../statistik/index.php">Laporan Aktivitas</a>
-        <a href="../notifikasi/index.php">
+        <a href="../notifikasi/index.php" class="d-flex justify-content-between align-items-center">
             Notifikasi
-            <?php if ($countNotif > 0): ?><span class="badge bg-danger ms-2"><?= $countNotif ?></span><?php endif; ?>
+            <?php if ($countNotif > 0): ?>
+                <span class="badge bg-danger rounded-pill" style="font-size: 0.7rem;"><?= $countNotif ?></span>
+            <?php endif; ?>
         </a>
         <a href="../auth/logout.php" style="color:#ffdddd;">Logout</a>
     </div>
 
     <div class="p-3 bg-white shadow-sm d-flex justify-content-between align-items-center" style="margin-left:245px;">
-        <h4 class="m-0 fw-bold text-dark">Cuaca Harian</h4>
+        <h4 class="m-0 fw-bold text-dark"><i class="bi bi-cloud-sun-fill text-warning"></i> Cuaca Harian</h4>
         <a href="../auth/profile.php" class="text-decoration-none fw-bold"><?= $_SESSION['user']['name']; ?> 
-        <i class="bi bi-person-circle" style="font-size:1.5rem; margin: 4px;"></i></a>
+        <i class="bi bi-person-circle" style="font-size:1.5rem; margin-left: 8px;"></i></a>
     </div>
 
     <div class="content text-center">
         
-        <h4 class="mb-3">Cari Kota Lain</h4>
+        <h4 class="mb-3">Cek Cuaca Kota Lain</h4>
         <form method="GET" action="index.php" class="row g-3 justify-content-center mb-4">
             <div class="col-auto">
                 <input type="text" name="city" placeholder="Masukkan nama kota..." class="form-control form-control-lg shadow-sm" required>
@@ -166,6 +185,14 @@ $countNotif = $notif->countUnread($_SESSION['user']['id']);
                 </div>
             <?php endif; ?>
         </form>
+
+            <?php if (!empty($errorMsg)): ?>
+                <div class="alert alert-danger alert-dismissible fade show shadow-sm w-75 mx-auto mb-4" role="alert">
+                    <i class="bi bi-exclamation-circle-fill me-2"></i> 
+                    <strong>Ups!</strong> <?= $errorMsg ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            <?php endif; ?>
 
         <div class="row g-4">
             <div class="<?= ($weatherSearch) ? 'col-lg-6' : 'col-lg-8 mx-auto'; ?>">
@@ -221,7 +248,10 @@ $countNotif = $notif->countUnread($_SESSION['user']['id']);
                                 <i class="bi bi-wind mb-1 d-block fs-5"></i><span class="small"><?= $weatherSearch['wind']['speed']; ?> m/s</span>
                             </div>
                             <div class="col-4">
-                                <i class="bi bi-eye mb-1 d-block fs-5"></i><span class="small"><?= isset($weatherSearch['visibility']) ? round($weatherSearch['visibility']/1000, 1) . ' km' : '-'; ?></span>
+                                <i class="bi bi-eye mb-1 d-block fs-5"></i>
+                                <span class="small">
+                                    <?= isset($weatherSearch['visibility']) ? round($weatherSearch['visibility']/1000, 1) . ' km' : '-'; ?>
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -234,8 +264,8 @@ $countNotif = $notif->countUnread($_SESSION['user']['id']);
             <div class="col-12">
                 <div class="card card-custom bg-white p-4">
                     <h5 class="text-start mb-4 fw-bold text-dark">
-                        <i class="bi bi-graph-up-arrow text-primary"></i> 
-                        Statistik Suhu 5 Hari Kedepan <?= htmlspecialchars($homeCity); ?>
+                        <i class="bi bi-thermometer-half text-danger"></i> 
+                        Statistik Suhu 5 Hari Kedepan Daerah <?= htmlspecialchars($homeCity); ?>
                     </h5>
                     
                     <?php if (!empty($chartLabels)): ?>
@@ -255,7 +285,6 @@ $countNotif = $notif->countUnread($_SESSION['user']['id']);
     <script src="../../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // Data dari PHP
         const labels = <?= json_encode($chartLabels); ?>;
         const temps = <?= json_encode($chartTemps); ?>;
 

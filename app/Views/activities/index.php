@@ -8,7 +8,7 @@ require_once "../../Models/Notification.php";
 $activityModel = new Activity();
 $notifBadge = new Notification();
 
-// Ambil data aktivitas
+$userId = $_SESSION['user']['id'];
 $activities = $activityModel->getAllByUser($_SESSION['user']['id']);
 $countNotif = $notifBadge->countUnread($_SESSION['user']['id']);
 ?>
@@ -50,39 +50,34 @@ $countNotif = $notifBadge->countUnread($_SESSION['user']['id']);
         }
         .sidebar a:hover, .sidebar a.active { background: #0d6efd;}
 
-        /* --- CONTENT --- */
         .main-content { margin-left:250px; padding:30px; }
         
-        /* --- PERBAIKAN LIST ACTIVITY --- */
         .activity-item {
             background: #fff;
             border-radius: 12px;
-            padding: 15px 20px; /* Padding lebih ramping */
+            padding: 15px 20px;
             margin-bottom: 12px;
             border-left: 5px solid #0d6efd;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02); /* Bayangan lebih tipis */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
             transition: all 0.2s ease-in-out;
             
-            /* Flexbox Alignment */
             display: flex;
             align-items: center;
         }
         
-        /* Efek Hover Diperhalus (Tidak terlalu lompat) */
         .activity-item:hover { 
             transform: translateY(-2px); 
             box-shadow: 0 5px 15px rgba(0,0,0,0.05); 
         }
         
-        /* KOLOM TANGGAL (FIXED WIDTH - AGAR SEJAJAR) */
         .date-box {
-            width: 80px;      /* Lebar Tetap */
-            min-width: 80px;  /* Tidak boleh mengecil */
+            width: 80px;
+            min-width: 80px;
             text-align: center;
             padding-right: 15px;
             border-right: 1px solid #eee;
             margin-right: 20px;
-            flex-shrink: 0;   /* Mencegah kolom ini tergencet */
+            flex-shrink: 0;
         }
         .date-day { font-size: 1.4rem; font-weight: 700; color: #333; line-height: 1; display: block; }
         .date-month { font-size: 0.75rem; text-transform: uppercase; color: #888; font-weight: 600; letter-spacing: 1px; display: block; }
@@ -92,12 +87,12 @@ $countNotif = $notifBadge->countUnread($_SESSION['user']['id']);
         }
         
         .content-box {
-            flex-grow: 1; /* Mengisi ruang sisa */
-            min-width: 0; /* Mencegah teks panjang merusak layout */
+            flex-grow: 1;
+            min-width: 0;
         }
 
         .action-box {
-            margin-left: auto; /* Memaksa tombol ke paling kanan */
+            margin-left: auto;
             display: flex;
             gap: 10px;
             flex-shrink: 0;
@@ -107,7 +102,6 @@ $countNotif = $notifBadge->countUnread($_SESSION['user']['id']);
         .btn-action { width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; transition: 0.2s; border: 1px solid transparent; background: #fff; }
         .btn-action:hover { background: #f1f3f5; border-color: #dee2e6; }
         
-        /* Status Styles */
         .item-done { border-left-color: #198754; opacity: 0.8; background: #fafffc; }
         .item-done .date-time { background: #d1e7dd; color: #0f5132; }
     </style>
@@ -126,9 +120,9 @@ $countNotif = $notifBadge->countUnread($_SESSION['user']['id']);
     <a href="../auth/logout.php" style="color:#ffdddd;">Logout</a>
 </div>
 
-<div class="p-3 bg-white shadow-sm d-flex justify-content-between align-items-center" style="margin-left:250px;">
+<div class="p-3 bg-white shadow-sm d-flex justify-content-between align-items-center" style="margin-left:245px;">
     <h4 class="m-0 fw-bold text-dark">Aktivitas Harian</h4>
-    <a href="../auth/profile.php" class="text-decoration-none fw-bold text-dark pe-3">
+    <a href="../auth/profile.php" class="text-decoration-none fw-bold">
         <?= $_SESSION['user']['name']; ?> 
         <i class="bi bi-person-circle text-primary" style="font-size:1.5rem; margin-left: 8px;"></i>
     </a>
