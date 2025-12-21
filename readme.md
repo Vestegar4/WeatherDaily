@@ -128,10 +128,10 @@ Buka terminal (Git Bash / CMD) dan arahkan ke folder `www`
 👤 Akun Demo
 
 Gunakan kredensial berikut untuk pengujian sistem tanpa perlu registrasi ulang:
-Role	Email	Password	Hak Akses
-Administrator	admin@weatherdaily.com	123456	Manajemen User, Hapus Aktivitas, Monitoring
-User	user@gmail.com	123456	Buat Jadwal, Cek Cuaca, Edit Profil
-
+| Role | Email | Password | Hak Akses |
+| :--- | :--- | :--- | :--- |
+| **Administrator** | `admin@weatherdaily.com` | `123456` | Manajemen User, Hapus Aktivitas, Monitoring |
+| **User** | `user@weatherdaily.com` | `user123` | Buat Jadwal, Cek Cuaca, Edit Profil |
 ---
 📂 Struktur Direktori (MVC Architecture)
 Bash
@@ -151,9 +151,9 @@ WeatherDaily/
 ---
 ## Tim Pengembang
 
-**Nama: * Muhammad Rifqy Hamzah (24416255201016)
-        * Muhammad Yussuf Abrory (24416255201250)
-        * Tegar Maulana Akbar (24416255201024)
+**Nama: ** Muhammad Rifqy Hamzah (24416255201016)
+        ** Muhammad Yussuf Abrory (24416255201250)
+        ** Tegar Maulana Akbar (24416255201024)
 
 **Program Studi:** TEKNIK INFORMATIKA
 
