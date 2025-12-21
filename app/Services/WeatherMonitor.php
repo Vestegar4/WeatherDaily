@@ -51,33 +51,51 @@ class WeatherMonitor {
         $main = strtolower($weather['main']);
         $temp = $weather['temp'];
         
+        $weatherCondition = $main;
+        if (strpos($main, 'clouds') !== false) $weatherCondition = 'berawan';
+        elseif (strpos($main, 'rain') !== false) $weatherCondition = 'hujan';
+        elseif (strpos($main, 'clear') !== false) $weatherCondition = 'cerah';
+        elseif (strpos($main, 'thunder') !== false) $weatherCondition = 'badai petir';
+        elseif (strpos($main, 'drizzle') !== false) $weatherCondition = 'gerimis';
+
         $saran = "Nikmati waktu istirahatmu.";
         $isUrgent = false;
 
         if (strpos($main, 'rain') !== false) {
-            $saran = "☔ <b>Hujan Turun:</b> Sedia payung jika ingin pergi keluar.";
+            if ($timeBlock == "Pagi") {
+                $saran = "🌧️ <b>Pagi Hujan:</b> Turun hujan ($weatherCondition). Jangan lupa bawa payung saat berangkat!";
+            } elseif ($timeBlock == "Siang") {
+                $saran = "☔ <b>Hujan Siang:</b> Hujan mengguyur di siang hari. Hati-hati jalanan licin.";
+            } elseif ($timeBlock == "Sore") {
+                $saran = "🌧️ <b>Sore Basah:</b> Hujan turun di jam pulang. Hati-hati di jalan!"; 
+            } elseif ($timeBlock == "Malam") {
+                $saran = "🌧️ <b>Malam Hujan:</b> Suara hujan menemanimu. Pastikan pintu jendela tertutup rapat.";
+            } else {
+                $saran = "☔ <b>Hujan Turun:</b> Sedia payung sebelum hujan.";
+            }
             $isUrgent = true;
+
         } elseif (strpos($main, 'thunder') !== false) {
             $saran = "⚡ <b>BAHAYA:</b> Badai petir sedang terjadi.";
             $isUrgent = true;
         } else {
             if ($timeBlock == "Pagi") {
-                $saran = "🌅 <b>Selamat Pagi:</b> Cuaca $main {$temp}°C. Waktu tepat untuk aktivitas luar.";
+                $saran = "🌅 <b>Selamat Pagi:</b> Cuaca $main {$temp}°C. Awal yang segar untuk hari ini.";
             } elseif ($timeBlock == "Siang") {
                 if ($temp > 32 || strpos($main, 'clear') !== false) {
-                    $saran = "☀️ <b>Terik Siang:</b> Panas {$temp}°C. Gunakan sunscreen.";
+                    $saran = "☀️ <b>Terik Siang:</b> Panas {$temp}°C! Matahari sangat terik, gunakan sunscreen & minum air.";
                     $isUrgent = true;
                 } else {
-                        $saran = "🏢 <b>Siang Hari:</b> Cuaca $main {$temp}°C.";
+                    $saran = "🏢 <b>Siang Hari:</b> Cuaca $main {$temp}°C. Semangat beraktivitas!";
                 }
             } elseif ($timeBlock == "Sore") {
-                $saran = "🌆 <b>Sore Hari:</b> Langit $main {$temp}°C.";
+                $saran = "🌆 <b>Sore Hari:</b> Langit $main {$temp}°C. Enak nih buat santai sejenak.";
             } elseif ($timeBlock == "Malam") {
                 if ($temp < 22) {
-                    $saran = "🧣 <b>Malam Dingin:</b> Suhu {$temp}°C. Pakai jaket jika keluar.";
+                    $saran = "🧣 <b>Malam Dingin:</b> Suhu {$temp}°C. Udara cukup dingin, tarik selimut tebal agar tidur mu nyenyak.";
                     $isUrgent = true;
                 } else {
-                    $saran = "🌙 <b>Malam Hari:</b> Istirahat yang cukup.";
+                    $saran = "🌙 <b>Malam Hari:</b>Cuaca tenang {$temp}°C. Selamat beristirahat.";
                 }
             }
         }

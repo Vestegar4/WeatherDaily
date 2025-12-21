@@ -212,7 +212,7 @@ foreach($dayStats as $row) {
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="fw-bold text-dark mb-0">
                             <i class="bi bi-thermometer-sun text-danger me-2"></i>
-                            Tren Riwayat Suhu (Database)
+                            Tren Riwayat Suhu
                         </h5>
                         <span class="badge bg-primary bg-opacity-10 text-primary">
                             Lokasi: <?= htmlspecialchars($userCity) ?>
@@ -223,7 +223,6 @@ foreach($dayStats as $row) {
                         <div style="height: 300px;">
                             <canvas id="tempHistoryChart"></canvas>
                         </div>
-                        <p class="text-muted small mt-2 text-center">*Data diambil dari riwayat pencatatan cuaca di database Anda.</p>
                     <?php else: ?>
                         <div class="alert alert-light text-center py-5 text-muted">
                             <i class="bi bi-cloud-slash fs-1 opacity-25"></i><br>

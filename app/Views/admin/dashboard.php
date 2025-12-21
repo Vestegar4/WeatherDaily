@@ -104,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['broadcast_msg'])) {
         <div class="col-md-12 mt-4">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-warning text-dark">
-                    <h5 class="mb-0"><i class="bi bi-megaphone-fill"></i> Broadcast Notifikasi Massal</h5>
+                    <h5 class="mb-0"><i class="bi bi-megaphone-fill"></i> Broadcast Notifikasi</h5>
                 </div>
                 <div class="card-body">
                     <?php if(isset($successMsg)) echo "<div class='alert alert-success'>$successMsg</div>"; ?>
